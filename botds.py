@@ -33,18 +33,6 @@ conexion_sincro = Web3(Web3.HTTPProvider(f"https://mainnet.infura.io/v3/{api_inf
 url_etherscan = "https://api.etherscan.io/v2/api"
 monitor_activo = False
 
-ERC20_ABI = [
-    {
-        "anonymous": False,
-        "inputs": [
-            {"indexed": True, "name": "from", "type": "address"},
-            {"indexed": True, "name": "to", "type": "address"},
-            {"indexed": False, "name": "value", "type": "uint256"},
-        ],
-        "name": "Transfer",
-        "type": "event"
-    }
-]
 
 #variables para monitoreo
 #last_data = {} #user_id : {wallet: {"eth":balance_eth, "txs": {token: [hash1, hash2]}}}
@@ -65,17 +53,13 @@ async def setup_hook():
 @bot.hybrid_command(description="Agrega una wallet de la red ETH") #lo que aparece abajo del comando /nombredelcomando
 @app_commands.describe(wallet="Dirección de la wallet")#lo que aparece cuando hay que agregar el parametro wallet
 async def agregarwallet(ctx: commands.Context, wallet:str): #commands.Context no es obligatorio, solo ayuda a entender mejor el codigo lo mismo con wallet, deberia ser un str
+    user_id = ctx.author.id
     try:
-        wallet_n = func_wallets.normalizar(wallet)
-        if not  wallet_n:#verificamos con la funcion
-            await ctx.send(embed=embeds.embed_error("Direccion invalida"))
+        agregado = func_wallets.agregar_wallet(user_id, wallet)
+        if agregado:
+            await ctx.send(embed = embeds.embed_exito(f"Wallet de {ctx.author} registrada correctamente."))
         else:
-            user_id = ctx.author.id
-            agregado = func_wallets.agregar_wallet(user_id, wallet_n)
-            if agregado:
-                await ctx.send(embed = embeds.embed_exito(f"Wallet de {ctx.author} registrada correctamente."))
-            else:
-                await ctx.send(embed=embeds.embed_error("Esta wallet ya se encuentra registrada."))
+            await ctx.send(embed=embeds.embed_error("Esta wallet ya se encuentra registrada."))
     except Exception as e:
         await ctx.send(embed = embeds.embed_error(f"Ocurrio un error: {e}"))
 
@@ -87,7 +71,8 @@ async def agregarwallet(ctx: commands.Context, wallet:str): #commands.Context no
 @app_commands.autocomplete(wallet=autocomplete_wallets)
 async def eliminarwallet(ctx, wallet: str):
     user_id = ctx.author.id
-    resultado = func_wallets.borrar_wallet(user_id, func_wallets.normalizar(wallet))#la funcion devuelve un string en base a si existe la wallet o no.
+    resultado = func_wallets.borrar_wallet(user_id, wallet)#la funcion devuelve un string en base a si existe la wallet o no.
+    
     if (resultado).endswith("correctamente."):
         await ctx.send(embed = embeds.embed_exito(resultado))#devolvemos el string que indica si todo salio bien
     else:
@@ -223,6 +208,7 @@ async def activar_monitoreo(interaction: discord.Interaction, wallet: str, stabl
 async def detener_monitoreo_cmd(interaction: discord.Interaction, wallet: str):
 
     detener_monitoreo(interaction.user.id, wallet)
+    
     await interaction.response.send_message(
         f"⛔ Monitoreo detenido para {wallet}.",
         ephemeral=True

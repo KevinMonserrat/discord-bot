@@ -23,26 +23,32 @@ def agregar_wallet(user_id, wallet):
     if str(user_id) not in data: #user_id es un numero, entonces lo hacemos str
         data[str(user_id)] = [] #si el usuario no existe en el archivo lo creamos y le asignamos una lista vacia
     
-    if wallet_norm not in data[str(user_id)]:
-        data[str(user_id)].append(wallet_norm)
-        guardar_wallets(data)
-        return True
-    return False   
+    if wallet_norm in data[str(user_id)]:
+        return False
+    
+    data[str(user_id)].append(wallet_norm)
+    guardar_wallets(data)
+    return True
+      
 def borrar_wallet(user_id, wallet):
     data = cargar_wallets()
-    wallet_norm = normalizar(wallet)
 
+    wallet_norm = normalizar(wallet)
+    
+
+    if not wallet_norm:
+        return "Wallet inválida."
+    
     if str(user_id) not in data:
         return "No existen wallets registradas."
     
-    if wallet not in data[str(user_id)]:
+    if wallet_norm not in data[str(user_id)]:
         return "La wallet no se encuentra registrada."
     
     data[str(user_id)].remove(wallet_norm)
-
     guardar_wallets(data)
 
-    return f"La wallet {wallet} fue eliminada correctamente."    
+    return f"La wallet {wallet_norm} fue eliminada correctamente."    
 
 
 
